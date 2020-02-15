@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+References
+All the code in this project was adapted from the lessons and videos that are
+part of the advanced lane finding project. 
+"""
+
+"""
 Draws the lane lines on the test images.
 """
 
