@@ -15,7 +15,7 @@ The following are the goals of this project:
 The initial part of the script uses OpenCV functions to calculate the camera matrix and distortion coefficients. For this step the chessboard images were used to obtain image points and object points.
 Firs the "object points" were prepared, which were the (x, y, z) coordinates of the chessboard. The assumption here is that the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image. Thus, objp is just a replicated array of coordinates, and objpoints will be appended with a copy of it ever time the chessboard corners were successfully found in a test image.  imgpoints will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection. This was followed by the OpenCV functions undistort and calibrateCamera. Next, the calculated camera matrix and distortion coefficients were used to undistort an image from the chessboard images provided in the camera_cal folder.  The chessboard corners were also drawn on the undistorted image.  The example used and the result of the script have been saved [here:](https://github.com/Eldurkar/CarND_Advanced-Lane-Lines_P2/tree/master/output_images/CameraCalibration)
 
-![camera calibration](https://github.com/Eldurkar/CarND_Advan<Down>ced-Lane-Lines_P2/blob/master/output_images/CameraCalibration/orig_undistort.jpg)
+![camera calibration](output_images/CameraCalibration/orig_undistort.jpg)
 
 ### Pipeline
 #### Distortion correction *(video_gen.py line 98)*
