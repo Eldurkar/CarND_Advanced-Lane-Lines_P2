@@ -100,10 +100,9 @@ To measure the curvature of the lane the curve fit function and radius of
 curvature equation
 [here:](https://www.intmath.com/applications-differentiation/8-radius-curvature.php) were used.  The difference in the polyfit this time was to have the conversion perspective so that the curve is in terms of meters. First using the Numpy polyfit the radius of curvature curve was converted from pixels to meters.  The curvature of the left lane was measured for this calculation. The radius of curvature equation was then applied to the polynomial of the curve calculated previously.
 
-#### 6. Example image of the result plotted back down onto the road identifying
-the lane area
+#### 6. Example image of the result plotted back down onto the road identifying the lane area
 
-![Radius of Curvature](output_images/RadiusOfCurv_Offset/tracked0.jpg)
+![Radius of Curvature](output_images/RadiusOfCurv_Offset/tracked2.jpg)
 
 ##### Camera offset *(video_gen.py line 210-215)*
 To find the camera center, the left and right lane pixels closest to the car were added and averaged over.  The average was then scaled by the pixels per meter in x. The final value was evaluated to check if it is to the left or right. The Open CV function puttext was used for the display, with the value rounded of and font set to white.
