@@ -26,7 +26,7 @@ chessboard detection. This was followed by the OpenCV functions undistort and
 ![camera calibration](output_images/CameraCalibration/orig_undistort.jpg)
 
 ### Pipeline (single images)
-#### 1. Distortion correction *(video_gen.py line 104)*
+#### 1. Distortion correction *(video_gen_v1.py line 104)*
 Here is the test image before applying distortion correction:
 
 ![test_img](output_images/DistortionCorrected/test1.jpg)
@@ -36,31 +36,28 @@ Here is the test image after applying distortion correction.
 
 ![corrected_img](output_images/DistortionCorrected/undistort0.jpg)
 
-#### 2. Binary image *(video_gen.py line 106-111)*
-A combination of methods (i.e., color transforms, gradients) have been used to create a binary image containing likely lane pixels.  First a numpy array called preprocessImage, the same size of the image was created. The test image was read in and a sobel threshold to generate gradients for the image in x and y was applied.  Next a color threshold was applied, that used both saturation and value using the hls and hlv from OpenCV. A combination of logical operators was used so that the processed image includes the X and Y sobels in addition to the color threshold. Below is a comparison of the original and binary image.
+#### 2. Binary image *(video_gen_v1.py line 303-308)*
+A combination of methods (i.e., color transforms, gradients) have been used tocreate a binary image containing likely lane pixels.  First a numpy array called `preprocessImage`, the same size of the image was created. The test image was read in and a sobel threshold to generate gradients for the image in x and y was applied.  Next a color threshold was applied, that used both saturation and value using the hls and hlv from OpenCV. A combination of logical operators was used so that the processed image includes the X and Y sobels in addition to the color threshold. Below is a comparison of the original and binary image.
 
 ![Binary image](output_images/BinaryImage/orig_bin.jpg)
 
-#### 3. Perspective transform *(video_gen.py line 113-130)*
+#### 3. Perspective transform *(video_gen_v1.py line 312-342)*
 The code for my perspective transform includes a function called
-`process_image()`, which appears in lines 113 through 130 in the file
-`video_gen.py`. Initially the source and destination points were hard coded as
-shown in the write up template, but when these points were tested, the lane
-lines did not appear parallel in some of the images.  The next approach was to
-define the trapezium formed by the lane lines in terms of the height and width
-of the image as described in the project support video.  The trapezoid
-parameters were then used to set the coordinates for the source and destination
-points as shown:
-
+`process_image()`, which appears in lines 312 through 342 in the file
+`video_gen_v1.py`. The source and destination points were hard coded
+as shown in the write up template, these points were tested and the lane
+lines appeared parallel. The source and destination points are as shown:
 ```python
-     src = np.float32([[img.shape[1]*(0.5-mid_width/2), img.shape[0]*height_pct], \
-                    [img.shape[1]*(0.5+mid_width/2), img.shape[0]*height_pct], \
-                    [img.shape[1]*(0.5+bot_width/2), img.shape[0]*bot_trim], \
-                    [img.shape[1]*(0.5-bot_width/2), img.shape[0]*bot_trim]])
-    offset = img_size[0] * 0.25
-    dst = np.float32([[offset, 0], [img_size[0]-offset, 0], \
-                    [img_size[0]-offset, img_size[1]], [offset,
-img_size[1]]])
+    src = np.float32(
+    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
+    [((img_size[0] / 6) - 10), img_size[1]],
+    [(img_size[0] * 5 / 6) + 60, img_size[1]],
+    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
+    dst = np.float32(
+    [[(img_size[0] / 4), 0],
+    [(img_size[0] / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), img_size[1]],
+    [(img_size[0] * 3 / 4), 0]])
 ```
 
 This resulted in the following source and destination points:
@@ -79,44 +76,38 @@ the `src` and `dst` points onto a test image and its warped counterpart to verif
 
 ![Perspective transform](output_images/PerspectiveTransform/orig_PerspTrans.jpg)
 
-#### 4. Lane line pixels and polynomial fit *(video_gen.py line 137-200)* 
-An object called the tracker was created to define the parameters required to
-defined histogram boxes. The centers of the histogram boxes were used for the
-curve fit and the points were averaged to get a smooth line.  Then there’s a
-function called `find_window_centroids()` for finding and storing the lane segment positions. The left and right window centers are stored at each level.  The starting position for the left and right lanes were found using numpy sum and convolve. Th levels were looped over and the centers of each of the windows (histograms) were found. Convolution is a procedure that finds the points of maximum overlap given two inputs. The argmax function was used to get the index of the point with the maximum pixel overlap.
-The best left/right centroid was found by using the previous left/right center as reference. 
-The function finally returns averaged values of the line centers, this helps
-prevent the markers from jumping around.  A `tracker()` object was created, and the windows centroids extracted and applied on to the warped image. After drawing the boxes, the centers of the boxes were used for the fitting. 
-`yvals` is the range from 0 to the warped image’s height.  `res_yvals` are the
-y values of the box centers. Then the `polyfit()` function was called to find the coefficients of the curve, which is a second-degree polynomial. In the example image the fitted curve was overlaid on the warped binary image.
+#### 4. Lane line pixels and polynomial fit *(video_gen_v1.py line 176-206)* 
+A function called `find_lane_pixels()` was created to define the parameters required to
+for the histogram windows.The histogram boxes were looped over to identify x and
+y pixels within the windows. The function finally returns the pixel positions
+for the left and right lines. 
+Then the `fit_polynomial()` function was called to find the coefficients of the curve, which is a second-degree polynomial. In the example image the fitted curve was overlaid on the warped binary image.
 
 ![Curve fit](output_images/Polyfit/orig_CurveFit.jpg)
 
-##### Pixel conversion *(video_gen.py line 133 and 201-203)*
-The pixel to real world space was set up using the following proportions such that, 10m is approximately 720 pix in y and 4m is approximately 384 pixels in x ( line 133 ).  These ratios vary depending on how the transform is set up.  
-
-#### 5. Radius of curvature *(video_gen.py line 204-208)*
-To measure the curvature of the lane the curve fit function and radius of
-curvature equation
-[here:](https://www.intmath.com/applications-differentiation/8-radius-curvature.php) were used.  The difference in the polyfit this time was to have the conversion perspective so that the curve is in terms of meters. First using the Numpy polyfit the radius of curvature curve was converted from pixels to meters.  The curvature of the left lane was measured for this calculation. The radius of curvature equation was then applied to the polynomial of the curve calculated previously.
+#### 5. Radius of curvature *(video_gen_v1.py line 282-298)*
+To measure the curvature of the lane the curve fit function and radius of curvature equation
+[here:](https://www.intmath.com/applications-differentiation/8-radius-curvature.php)
+were used.  The difference in the polyfit this time was to have the conversion
+perspective so that the curve is in terms of meters. The `left_fit` and
+`right_fit` arrays calculated previously were used to in the radius of
+curvature equation to find the left and right curvatures.
 
 #### 6. Example image of the result plotted back down onto the road identifying the lane area
 
 ![Radius of Curvature](output_images/RadiusOfCurv_Offset/tracked2.jpg)
 
-##### Camera offset *(video_gen.py line 210-215)*
+##### Camera offset *(video_gen_v1.py line 371-377)*
 To find the camera center, the left and right lane pixels closest to the car were added and averaged over.  The average was then scaled by the pixels per meter in x. The final value was evaluated to check if it is to the left or right. The Open CV function puttext was used for the display, with the value rounded of and font set to white.
 
 ### Pipeline (video)
-Here is the [link](output1_tracked.mp4) to the video result of the project video.
+Here is the [link](output3_tracked.mp4) to the video result of the project video.
 
 ### Discussion
 1.  Perspective transformation
 While doing the perspective transformation identifying the 4 points in the test image to transform posed to be a challenge.  I found that the points had to be in a sequential order for the transform to work correctly, starting from the bottom left going clockwise to the bottom right.
 The pixel to meters conversion ratio was also difficult to set.  It depended on how the points for the perspective transform were defined.  So, the two had to be done together.
-2.  Lane curvature
-Only the left lane was used to define the lane curvature. A more accurate way to define the curvature could be to also calculate the curvature of the right lane and average over the two for the actual curvature.
-3.  Bumps/Gradient in the road
+2.  Bumps/Gradient in the road
 While attempting the challenge video and at some point, in the project video, it was noticeable that the lane lines go haywire at the far end in cases of sharp corners. Another parameter that seemed to influence the drawing of lanes was slopes in the road and bumps on the road. I suppose this is because the bumps / gradients in the road mess up the perspective transform function and the points used to define the perspective window do not apply any more.
 
 ### References
